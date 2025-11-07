@@ -1,4 +1,3 @@
-# saml.py
 import os
 import json
 import urllib.parse
@@ -7,6 +6,7 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 import jwt
 import datetime
 from jwt import ExpiredSignatureError, InvalidTokenError
+
 JWT_SECRET_KEY = 'VectorIQ#Dev'
 
 def init_saml_auth(req, saml_path):
@@ -38,12 +38,24 @@ def saml_callback(saml_path):
     auth.process_response()
     errors = auth.get_errors()
     group_name = 'user'
-    
+
     if not errors:
-        
+        # Extract SAML attributes
+        attributes = auth.get_attributes()
+
+        # Extract email address
+        email_list = attributes.get('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', [])
+        email_address = email_list[0] if email_list else 'no-email@example.com'
+
+        # Extract job title
+        job_title_list = attributes.get('http://schemas.microsoft.com/identity/claims/jobtitle', [])
+        job_title = job_title_list[0] if job_title_list else 'No Job Title'
+
         user_data = {
             'name': 'Test User',
-            'group': group_name
+            'group': group_name,
+            'email': email_address,   # Added email
+            'job_title': job_title    # Added job title
         }
 
         token = create_jwt_token(user_data)
